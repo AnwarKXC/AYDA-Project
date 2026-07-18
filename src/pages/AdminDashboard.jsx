@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { useNavigate } from 'react-router-dom' // 1. أضفنا الاستيراد ده
 
 const REQUEST_TYPE_LABELS = {
   prescription: 'روشتة',
@@ -15,6 +16,7 @@ const STATUS_LABELS = {
 }
 
 export default function AdminDashboard() {
+  const navigate = useNavigate() // 2. عرفنا الـ navigate
   const [user, setUser] = useState(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -84,8 +86,11 @@ export default function AdminDashboard() {
     e.preventDefault()
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) alert("خطأ في الدخول: " + error.message)
-    else window.location.reload()
+    if (error) {
+        alert("خطأ في الدخول: " + error.message)
+    } else {
+        navigate(0) // 3. استخدمنا navigate(0) بدلاً من reload
+    }
     setLoading(false)
   }
 
@@ -108,7 +113,7 @@ export default function AdminDashboard() {
         <h1 className="text-3xl font-black text-blue-900">لوحة تحكم الطلبات</h1>
         <div className="flex gap-3">
           <button onClick={exportToCSV} className="bg-green-600 text-white px-6 py-2 rounded-xl font-bold">تصدير CSV</button>
-          <button onClick={() => { supabase.auth.signOut(); window.location.reload(); }} className="bg-red-500 text-white px-6 py-2 rounded-xl font-bold">خروج</button>
+          <button onClick={() => { supabase.auth.signOut(); navigate(0); }} className="bg-red-500 text-white px-6 py-2 rounded-xl font-bold">خروج</button>
         </div>
       </div>
 
