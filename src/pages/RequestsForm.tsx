@@ -1,15 +1,17 @@
 import { useState } from 'react'
+import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import type { RequestType } from '../types'
 import './RequestPage.css'
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
 const MAX_FILE_SIZE_MB = 5
 
 export default function RequestPage() {
-  const [activeTab, setActiveTab] = useState('prescription')
+  const [activeTab, setActiveTab] = useState<RequestType>('prescription')
   const [showOther, setShowOther] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [file, setFile] = useState(null)
+  const [file, setFile] = useState<File | null>(null)
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -22,7 +24,7 @@ export default function RequestPage() {
     symptoms: ''
   })
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
 
@@ -79,7 +81,7 @@ export default function RequestPage() {
     setLoading(false)
   }
 
-  const tabs = [
+  const tabs: { id: RequestType; label: string }[] = [
     { id: 'prescription', label: 'صرف روشتة' },
     { id: 'convoy', label: 'طلب قافلة' },
     { id: 'medical', label: 'أجهزة طبية' },
@@ -138,7 +140,7 @@ export default function RequestPage() {
                 <input type="number" placeholder="السن" className="req-input" onChange={(e) => setFormData({ ...formData, age: e.target.value })} />
                 <textarea placeholder="سبب عدم القدرة على الصرف" className="req-textarea" onChange={(e) => setFormData({ ...formData, details: e.target.value })} />
                 <label className="req-label">ارفع صورة الروشتة:</label>
-                <input type="file" accept="image/*" className="req-file" onChange={(e) => setFile(e.target.files[0])} />
+                <input type="file" accept="image/*" className="req-file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
               </>
             )}
 

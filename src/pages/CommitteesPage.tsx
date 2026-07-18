@@ -1,9 +1,21 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import type { Committee } from '../types'
 import './CommitteesPage.css'
 
+const Background = () => (
+  <div className="ayda-bg">
+    <div className="ayda-blob b1" />
+    <div className="ayda-blob b2" />
+    <div className="ayda-blob b3" />
+    <div className="ayda-blob b4" />
+    <div className="ayda-blob b5" />
+    <div className="ayda-grain" />
+  </div>
+)
+
 export default function CommitteesPage() {
-  const [committees, setCommittees] = useState([])
+  const [committees, setCommittees] = useState<Committee[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -15,17 +27,6 @@ export default function CommitteesPage() {
     }
     fetchData()
   }, [])
-
-  const Background = () => (
-    <div className="ayda-bg">
-      <div className="ayda-blob b1" />
-      <div className="ayda-blob b2" />
-      <div className="ayda-blob b3" />
-      <div className="ayda-blob b4" />
-      <div className="ayda-blob b5" />
-      <div className="ayda-grain" />
-    </div>
-  )
 
   if (loading) {
     return (

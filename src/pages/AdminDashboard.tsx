@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react'
+import type { FormEvent } from 'react'
+import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabaseClient'
 import { useNavigate } from 'react-router-dom'
+import type { MedicalRequest, RequestStatus } from '../types'
 
-const REQUEST_TYPE_LABELS = {
+const REQUEST_TYPE_LABELS: Record<string, string> = {
   prescription: 'روشتة',
   convoy: 'قافلة',
   medical: 'أجهزة طبية',
+  tools: 'أجهزة طبية',
   consultation: 'استشارة',
 }
 
-const STATUS_LABELS = {
+const STATUS_LABELS: Record<RequestStatus, { text: string; className: string }> = {
   pending: { text: 'قيد الانتظار', className: 'bg-yellow-100 text-yellow-800' },
   approved: { text: 'مقبول', className: 'bg-green-100 text-green-800' },
   rejected: { text: 'مرفوض', className: 'bg-red-100 text-red-800' },
@@ -17,12 +21,12 @@ const STATUS_LABELS = {
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState<User | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [requests, setRequests] = useState([])
-  const [imageUrls, setImageUrls] = useState({})
+  const [requests, setRequests] = useState<MedicalRequest[]>([])
+  const [imageUrls, setImageUrls] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const checkSession = async () => {
@@ -48,20 +52,20 @@ export default function AdminDashboard() {
 
   // The prescriptions bucket is private: images are only reachable through
   // short-lived signed URLs, which the storage RLS restricts to admins.
-  async function signImageUrls(rows, expiresInSeconds) {
-    const paths = rows.map((r) => r.image_url).filter(Boolean)
+  async function signImageUrls(rows: MedicalRequest[], expiresInSeconds: number) {
+    const paths = rows.map((r) => r.image_url).filter((p): p is string => Boolean(p))
     if (!paths.length) return {}
     const { data: signed } = await supabase.storage
       .from('prescriptions')
       .createSignedUrls(paths, expiresInSeconds)
-    const map = {}
+    const map: Record<string, string> = {}
     for (const item of signed || []) {
-      if (item.signedUrl) map[item.path] = item.signedUrl
+      if (item.path && item.signedUrl) map[item.path] = item.signedUrl
     }
     return map
   }
 
-  async function updateStatus(id, newStatus) {
+  async function updateStatus(id: string, newStatus: RequestStatus) {
     const { error } = await supabase.from('requests').update({ status: newStatus }).eq('id', id)
     if (!error) fetchRequests()
   }
@@ -99,7 +103,7 @@ export default function AdminDashboard() {
     document.body.removeChild(link);
   };
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
