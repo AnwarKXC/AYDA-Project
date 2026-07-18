@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import './RequestPage.css'
 
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
+const MAX_FILE_SIZE_MB = 5
+
 export default function RequestPage() {
   const [activeTab, setActiveTab] = useState('prescription')
   const [showOther, setShowOther] = useState(false)
@@ -26,8 +29,18 @@ export default function RequestPage() {
     let imageUrl = null
 
     if (activeTab === 'prescription' && file) {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${Math.random()}.${fileExt}`
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        alert('يُسمح فقط بصور بصيغة JPG أو PNG أو WEBP أو HEIC')
+        setLoading(false)
+        return
+      }
+      if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+        alert(`حجم الصورة يجب ألا يتجاوز ${MAX_FILE_SIZE_MB} ميجابايت`)
+        setLoading(false)
+        return
+      }
+      const fileExt = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
+      const fileName = `${crypto.randomUUID()}.${fileExt}`
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('prescriptions')
         .upload(fileName, file)

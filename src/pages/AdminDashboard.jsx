@@ -22,6 +22,7 @@ export default function AdminDashboard() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [requests, setRequests] = useState([])
+  const [imageUrls, setImageUrls] = useState({})
 
   useEffect(() => {
     const checkSession = async () => {
@@ -38,8 +39,26 @@ export default function AdminDashboard() {
       .from('requests')
       .select('*')
       .order('created_at', { ascending: false })
-    if (!error) setRequests(data || [])
+    if (!error) {
+      setRequests(data || [])
+      setImageUrls(await signImageUrls(data || [], 60 * 60))
+    }
     setLoading(false)
+  }
+
+  // The prescriptions bucket is private: images are only reachable through
+  // short-lived signed URLs, which the storage RLS restricts to admins.
+  async function signImageUrls(rows, expiresInSeconds) {
+    const paths = rows.map((r) => r.image_url).filter(Boolean)
+    if (!paths.length) return {}
+    const { data: signed } = await supabase.storage
+      .from('prescriptions')
+      .createSignedUrls(paths, expiresInSeconds)
+    const map = {}
+    for (const item of signed || []) {
+      if (item.signedUrl) map[item.path] = item.signedUrl
+    }
+    return map
   }
 
   async function updateStatus(id, newStatus) {
@@ -47,16 +66,13 @@ export default function AdminDashboard() {
     if (!error) fetchRequests()
   }
 
-  const getImageUrl = (path) => {
-    if (!path) return null
-    const { data } = supabase.storage.from('prescriptions').getPublicUrl(path)
-    return data.publicUrl
-  }
-
-  const exportToCSV = () => {
+  const exportToCSV = async () => {
+    // CSV files get opened later/offline, so sign fresh URLs with a longer
+    // 7-day expiry instead of reusing the 1-hour ones used for display.
+    const csvUrls = await signImageUrls(requests, 60 * 60 * 24 * 7)
     const headers = ["الاسم", "الهاتف", "نوع الطلب", "السن", "المدينة", "الجهاز", "الأمراض المزمنة", "الأعراض", "التفاصيل", "الحالة", "رابط الروشتة"];
     const rows = requests.map(req => {
-      const imgUrl = req.image_url ? getImageUrl(req.image_url) : "";
+      const imgUrl = req.image_url ? csvUrls[req.image_url] || "" : "";
       return [
         `"${req.full_name || ""}"`,
         `"${req.phone || ""}"`,
@@ -141,7 +157,7 @@ export default function AdminDashboard() {
                   {req.device && <p>الجهاز: {req.device}</p>}
                   {req.chronic_diseases && <p>أمراض: {req.chronic_diseases}</p>}
                   {req.symptoms && <p>أعراض: {req.symptoms}</p>}
-                  {req.image_url && <a href={getImageUrl(req.image_url)} target="_blank" rel="noreferrer" className="text-blue-600 underline font-bold">عرض الروشتة</a>}
+                  {req.image_url && imageUrls[req.image_url] && <a href={imageUrls[req.image_url]} target="_blank" rel="noreferrer" className="text-blue-600 underline font-bold">عرض الروشتة</a>}
                 </td>
                 <td className="p-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${STATUS_LABELS[req.status]?.className}`}>{STATUS_LABELS[req.status]?.text}</span>
