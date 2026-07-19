@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import Navbar from './components/Navbar'
 import CommitteesPage from './pages/CommitteesPage'
 import RequestsForm from './pages/RequestsForm'
@@ -8,7 +9,7 @@ import './pages/App.css'
 function App() {
   return (
     <BrowserRouter>
-      {/* شلنا bg-gray-50 عشان متغطيش على خلفيات الصفحات الداخلية */}
+      <Toaster richColors position="top-center" dir="rtl" />
       <div className="app-shell">
         <Navbar />
 

@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabaseClient'
-import type { Committee } from '../types'
+import { useQuery } from '@tanstack/react-query'
+import { fetchCommittees } from '../services/committees'
 import './CommitteesPage.css'
 
 const Background = () => (
@@ -15,18 +14,11 @@ const Background = () => (
 )
 
 export default function CommitteesPage() {
-  const [committees, setCommittees] = useState<Committee[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true)
-      const { data } = await supabase.from('committees').select('*').order('id', { ascending: true })
-      if (data) setCommittees(data)
-      setLoading(false)
-    }
-    fetchData()
-  }, [])
+  const {
+    data: committees = [],
+    isLoading: loading,
+    isError,
+  } = useQuery({ queryKey: ['committees'], queryFn: fetchCommittees })
 
   if (loading) {
     return (
@@ -92,6 +84,14 @@ export default function CommitteesPage() {
         </div>
 
         {/* شبكة اللجان */}
+        {isError && (
+          <p className="ayda-section-sub" role="alert">
+            تعذر تحميل اللجان، حاول تحديث الصفحة
+          </p>
+        )}
+        {!isError && committees.length === 0 && (
+          <p className="ayda-section-sub">لا توجد لجان مضافة حالياً</p>
+        )}
         <div className="ayda-grid">
           {committees.map((c, i) => (
             <div
