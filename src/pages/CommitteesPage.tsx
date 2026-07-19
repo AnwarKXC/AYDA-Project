@@ -30,7 +30,6 @@ export default function CommitteesPage() {
           src={HERO_IMAGE_URL}
           alt="فريق AYDA"
           className="absolute inset-0 h-full w-full object-cover opacity-40"
-          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-gradient-to-l from-ink via-ink/80 to-ink/40" />
 

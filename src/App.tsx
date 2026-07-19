@@ -23,7 +23,7 @@ function NotFound() {
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Toaster richColors position="top-center" dir="rtl" />
       <div className="flex min-h-screen flex-col" dir="rtl">
         <Navbar />

@@ -74,6 +74,31 @@ export async function fetchRequests(filters: RequestFilters = {}): Promise<Reque
   return { rows: data ?? [], count: count ?? 0 }
 }
 
+export interface RequestCounts {
+  total: number
+  pending: number
+  approved: number
+  rejected: number
+}
+
+// head: true skips returning rows, so each count is a cheap COUNT(*) query.
+export async function fetchRequestCounts(): Promise<RequestCounts> {
+  const base = () => supabase.from('requests').select('*', { count: 'exact', head: true })
+  const [total, pending, approved, rejected] = await Promise.all([
+    base(),
+    base().eq('status', 'pending'),
+    base().eq('status', 'approved'),
+    base().eq('status', 'rejected'),
+  ])
+  for (const r of [total, pending, approved, rejected]) if (r.error) throw r.error
+  return {
+    total: total.count ?? 0,
+    pending: pending.count ?? 0,
+    approved: approved.count ?? 0,
+    rejected: rejected.count ?? 0,
+  }
+}
+
 export async function fetchAllRequestsForExport(): Promise<MedicalRequest[]> {
   const { data, error } = await supabase
     .from('requests')
