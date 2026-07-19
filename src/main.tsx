@@ -1,4 +1,10 @@
-import '@fontsource-variable/alexandria'
+// Display face - used sparingly for headlines, big numbers, eyebrows.
+import '@fontsource-variable/changa'
+// Body/UI face - carries labels, paragraphs, buttons and form inputs.
+import '@fontsource/ibm-plex-sans-arabic/arabic-400.css'
+import '@fontsource/ibm-plex-sans-arabic/arabic-500.css'
+import '@fontsource/ibm-plex-sans-arabic/arabic-600.css'
+import '@fontsource/ibm-plex-sans-arabic/arabic-700.css'
 import './main.css'
 
 import { StrictMode } from 'react'

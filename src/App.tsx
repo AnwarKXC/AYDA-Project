@@ -22,8 +22,8 @@ function RouteLoading() {
 function NotFound() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center" dir="rtl">
-      <span className="text-6xl font-black text-teal/20">404</span>
-      <h1 className="text-2xl font-black">هذه الصفحة غير موجودة</h1>
+      <span className="font-display text-6xl font-bold text-teal/20">404</span>
+      <h1 className="font-display text-2xl font-bold">هذه الصفحة غير موجودة</h1>
       <p className="text-ink/60">يمكنك العودة للرئيسية أو إرسال طلب مساعدة</p>
       <Link
         to="/"

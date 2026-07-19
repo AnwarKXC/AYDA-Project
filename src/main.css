@@ -8,7 +8,11 @@
 	}
 
 	body {
-		@apply bg-sand-deep text-ink antialiased;
+		@apply bg-sand text-ink antialiased;
+	}
+
+	h1, h2, h3, .font-display {
+		font-family: theme('fontFamily.display');
 	}
 
 	/* Visible focus for keyboard users, tinted to the brand. */
@@ -16,6 +20,7 @@
 		@apply outline-2 outline-teal;
 		outline-offset: 2px;
 	}
+
 	@media (prefers-reduced-motion: reduce) {
 		html {
 			scroll-behavior: auto;
@@ -26,6 +31,16 @@
 			animation-duration: 0.01ms !important;
 			animation-iteration-count: 1 !important;
 			transition-duration: 0.01ms !important;
+			scroll-behavior: auto !important;
 		}
+	}
+}
+
+@layer utilities {
+	.text-gradient {
+		background: theme('backgroundImage.brand-fade');
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
 	}
 }
