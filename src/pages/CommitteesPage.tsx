@@ -1,123 +1,133 @@
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchCommittees } from '../services/committees'
-import './CommitteesPage.css'
+import { HERO_IMAGE_URL } from '../lib/assets'
 
-const Background = () => (
-  <div className="ayda-bg">
-    <div className="ayda-blob b1" />
-    <div className="ayda-blob b2" />
-    <div className="ayda-blob b3" />
-    <div className="ayda-blob b4" />
-    <div className="ayda-blob b5" />
-    <div className="ayda-grain" />
-  </div>
-)
+function CommitteeSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-2xl bg-white shadow-card">
+      <div className="h-44 animate-pulse bg-sand-deep" />
+      <div className="space-y-3 p-5">
+        <div className="h-5 w-2/3 animate-pulse rounded bg-sand-deep" />
+        <div className="h-4 w-full animate-pulse rounded bg-sand-deep" />
+      </div>
+    </div>
+  )
+}
 
 export default function CommitteesPage() {
   const {
     data: committees = [],
-    isLoading: loading,
+    isLoading,
     isError,
   } = useQuery({ queryKey: ['committees'], queryFn: fetchCommittees })
 
-  if (loading) {
-    return (
-      <div className="ayda-page" dir="rtl">
-        <Background />
-        <div className="ayda-loader">
-          <div className="ayda-spinner" />
-          <span style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem' }}>جاري التحميل...</span>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="ayda-page" dir="rtl">
-      <Background />
+    <div>
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-ink">
+        <img
+          src={HERO_IMAGE_URL}
+          alt="فريق AYDA"
+          className="absolute inset-0 h-full w-full object-cover opacity-40"
+          fetchPriority="high"
+        />
+        <div className="absolute inset-0 bg-gradient-to-l from-ink via-ink/80 to-ink/40" />
 
-      <div className="ayda-content">
-        {/* ناف بار */}
-        <div className="ayda-nav">
-          <div className="ayda-nav-brand">
-            <img
-              className="ayda-nav-logo"
-              src="https://zlzxuujbzksrebgwiros.supabase.co/storage/v1/object/public/images/LOGO.png"
-              alt="AYDA Logo"
-            />
-            <span className="ayda-nav-name">AYDA</span>
-          </div>
-          <span className="ayda-nav-tag">Association of Young Doctors</span>
-        </div>
-
-        {/* الهيرو */}
-        <div className="ayda-hero-wrap">
-          <div className="ayda-hero">
-            <img
-              className="ayda-hero-img"
-              src="https://zlzxuujbzksrebgwiros.supabase.co/storage/v1/object/public/images/AYDA.jpg"
-              alt="AYDA Team"
-            />
-            <div className="ayda-hero-overlay" />
-            <div className="ayda-hero-shine" />
-            <div className="ayda-hero-content">
-              <span className="ayda-eyebrow">مرحباً بكم</span>
-              <h1 className="ayda-hero-title">
-                فريق <span className="ayda-gradient-text">AYDA</span>
-              </h1>
-              <p className="ayda-hero-text">
-                نحن فريق من أطباء المستقبل، نسعى لصنع الفارق وتطوير مهاراتنا لخدمة مجتمعنا.
-                AYDA هي منصتنا للإبداع، التعلم، والتميز في كل مجالات العمل الطبي والتطوعي.
-              </p>
+        <div className="relative mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-32">
+          <div className="max-w-2xl animate-fade-up">
+            <span className="mb-4 inline-block rounded-full bg-amber-soft px-4 py-1 text-sm font-bold text-amber">
+              Association of Young Doctors
+            </span>
+            <h1 className="text-4xl font-black leading-tight text-white sm:text-6xl">
+              الصحة{' '}
+              <span className="relative inline-block">
+                حق للجميع
+                <svg
+                  className="absolute -bottom-2 right-0 w-full"
+                  viewBox="0 0 200 12"
+                  fill="none"
+                  aria-hidden="true"
+                  preserveAspectRatio="none"
+                >
+                  <path d="M4 8 C60 2, 140 2, 196 7" stroke="#E9A13B" strokeWidth="5" strokeLinecap="round" />
+                </svg>
+              </span>
+            </h1>
+            <p className="mt-6 text-lg leading-relaxed text-white/80">
+              فريق من أطباء المستقبل يعمل على توصيل الدواء والأجهزة الطبية والاستشارات لمن يحتاجها،
+              مجاناً وبكرامة كاملة.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                to="/request"
+                className="rounded-xl bg-amber px-7 py-3.5 font-black text-ink shadow-lift transition hover:brightness-110"
+              >
+                اطلب مساعدة طبية
+              </Link>
+              <a
+                href="#committees"
+                className="rounded-xl border border-white/30 px-7 py-3.5 font-bold text-white transition hover:bg-white/10"
+              >
+                تعرّف على اللجان
+              </a>
             </div>
           </div>
         </div>
+      </section>
 
-        {/* عنوان القسم */}
-        <div className="ayda-section-head">
-          <div className="ayda-section-title-row">
-            <span className="ayda-line" />
-            <h2 className="ayda-section-title">لجان AYDA</h2>
-            <span className="ayda-line rev" />
-          </div>
-          <p className="ayda-section-sub">تعرّف على اللجان التي تشكّل عمل الفريق ومجالات تخصصه</p>
+      {/* Committees */}
+      <section id="committees" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+        <div className="mb-10 text-center">
+          <span className="text-sm font-bold text-amber">فرق العمل</span>
+          <h2 className="mt-1 text-3xl font-black">لجان AYDA</h2>
+          <p className="mt-2 text-ink/60">تعرّف على اللجان التي تشكّل عمل الفريق ومجالات تخصصه</p>
         </div>
 
-        {/* شبكة اللجان */}
         {isError && (
-          <p className="ayda-section-sub" role="alert">
+          <p className="rounded-xl bg-red-50 p-4 text-center font-bold text-red-700" role="alert">
             تعذر تحميل اللجان، حاول تحديث الصفحة
           </p>
         )}
-        {!isError && committees.length === 0 && (
-          <p className="ayda-section-sub">لا توجد لجان مضافة حالياً</p>
-        )}
-        <div className="ayda-grid">
-          {committees.map((c, i) => (
-            <div
-              key={c.id}
-              className="ayda-card"
-              style={{ animationDelay: `${Math.min(i, 6) * 0.08}s` }}
-            >
-              <div className="ayda-card-media">
-                {c.image_url ? (
-                  <img src={c.image_url} alt={c.name} />
-                ) : (
-                  <div className="ayda-card-media-empty">لا توجد صورة</div>
-                )}
-                <div className="ayda-card-fade" />
-                <div className="ayda-badge">{c.code}</div>
-              </div>
 
-              <div className="ayda-card-body">
-                <h3 className="ayda-card-title">{c.name}</h3>
-                <p className="ayda-card-desc">{c.description}</p>
-                <div className="ayda-card-underline" />
-              </div>
-            </div>
-          ))}
+        {!isError && !isLoading && committees.length === 0 && (
+          <p className="text-center text-ink/50">لا توجد لجان مضافة حالياً</p>
+        )}
+
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {isLoading
+            ? Array.from({ length: 6 }).map((_, i) => <CommitteeSkeleton key={i} />)
+            : committees.map((c) => (
+                <article
+                  key={c.id}
+                  className="group overflow-hidden rounded-2xl bg-white shadow-card transition hover:-translate-y-1 hover:shadow-lift"
+                >
+                  <div className="relative h-44 bg-teal-soft">
+                    {c.image_url ? (
+                      <img
+                        src={c.image_url}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-4xl font-black text-teal/30">
+                        {c.code}
+                      </div>
+                    )}
+                    <span className="absolute bottom-3 right-3 rounded-full bg-ink/80 px-3 py-1 text-xs font-bold text-white">
+                      {c.code}
+                    </span>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="text-lg font-black">{c.name}</h3>
+                    {c.description && <p className="mt-1 text-sm leading-relaxed text-ink/60">{c.description}</p>}
+                  </div>
+                </article>
+              ))}
         </div>
-      </div>
+      </section>
     </div>
   )
 }
