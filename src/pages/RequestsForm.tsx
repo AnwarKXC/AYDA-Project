@@ -1,92 +1,132 @@
 import { useState } from 'react'
-import type { FormEvent } from 'react'
-import { supabase } from '../lib/supabaseClient'
-import type { RequestType } from '../types'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
+import { requestFormSchema, normalizePhone } from '../lib/validation'
+import type { RequestFormValues } from '../lib/validation'
+import { submitRequest, uploadPrescription, ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE_MB } from '../services/requests'
 import './RequestPage.css'
 
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
-const MAX_FILE_SIZE_MB = 5
+const TABS: { id: RequestFormValues['request_type']; label: string }[] = [
+  { id: 'prescription', label: 'صرف روشتة' },
+  { id: 'convoy', label: 'طلب قافلة' },
+  { id: 'medical', label: 'أجهزة طبية' },
+  { id: 'consultation', label: 'استشارة طبية' },
+]
+
+const DEVICE_OPTIONS = ['كرسي متحرك', 'جهاز قياس ضغط', 'جهاز قياس سكر']
+
+const EMPTY_VALUES: RequestFormValues = {
+  request_type: 'prescription',
+  full_name: '',
+  phone: '',
+  age: '',
+  city: '',
+  device: '',
+  chronic_diseases: '',
+  symptoms: '',
+  details: '',
+}
 
 export default function RequestPage() {
-  const [activeTab, setActiveTab] = useState<RequestType>('prescription')
-  const [showOther, setShowOther] = useState(false)
-  const [loading, setLoading] = useState(false)
   const [file, setFile] = useState<File | null>(null)
+  const [fileError, setFileError] = useState<string | null>(null)
+  const [showOther, setShowOther] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
 
-  const [formData, setFormData] = useState({
-    full_name: '',
-    phone: '',
-    details: '',
-    age: '',
-    city: '',
-    device: '',
-    chronic_diseases: '',
-    symptoms: ''
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    clearErrors,
+    formState: { errors, isSubmitting },
+  } = useForm<RequestFormValues>({
+    resolver: zodResolver(requestFormSchema),
+    defaultValues: EMPTY_VALUES,
   })
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setLoading(true)
+  const activeTab = watch('request_type')
 
-    let imageUrl = null
-
-    if (activeTab === 'prescription' && file) {
-      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        alert('يُسمح فقط بصور بصيغة JPG أو PNG أو WEBP أو HEIC')
-        setLoading(false)
-        return
-      }
-      if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-        alert(`حجم الصورة يجب ألا يتجاوز ${MAX_FILE_SIZE_MB} ميجابايت`)
-        setLoading(false)
-        return
-      }
-      const fileExt = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
-      const fileName = `${crypto.randomUUID()}.${fileExt}`
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('prescriptions')
-        .upload(fileName, file)
-
-      if (uploadError) {
-        alert("خطأ في رفع الصورة: " + uploadError.message)
-        setLoading(false)
-        return
-      }
-      imageUrl = uploadData.path
-    }
-
-    const { error } = await supabase.from('requests').insert([
-      {
-        full_name: formData.full_name,
-        phone: formData.phone,
-        request_type: activeTab,
-        age: formData.age || null,
-        city: formData.city || null,
-        device: formData.device || null,
-        chronic_diseases: formData.chronic_diseases || null,
-        symptoms: formData.symptoms || null,
-        details: formData.details,
-        image_url: imageUrl,
-        status: 'pending'
-      }
-    ])
-
-    if (error) {
-      alert("خطأ أثناء الإرسال: " + error.message)
-    } else {
-      alert("تم إرسال طلبك بنجاح!")
-      setFormData({ full_name: '', phone: '', details: '', age: '', city: '', device: '', chronic_diseases: '', symptoms: '' })
-      setFile(null)
-    }
-    setLoading(false)
+  const switchTab = (tab: RequestFormValues['request_type']) => {
+    setValue('request_type', tab)
+    setShowOther(false)
+    setFile(null)
+    setFileError(null)
+    clearErrors()
   }
 
-  const tabs: { id: RequestType; label: string }[] = [
-    { id: 'prescription', label: 'صرف روشتة' },
-    { id: 'convoy', label: 'طلب قافلة' },
-    { id: 'medical', label: 'أجهزة طبية' },
-    { id: 'consultation', label: 'استشارة طبية' }
-  ]
+  const handleFileChange = (selected: File | null) => {
+    setFileError(null)
+    if (selected) {
+      if (!ALLOWED_IMAGE_TYPES.includes(selected.type)) {
+        setFileError('يُسمح فقط بصور بصيغة JPG أو PNG أو WEBP أو HEIC')
+        setFile(null)
+        return
+      }
+      if (selected.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+        setFileError(`حجم الصورة يجب ألا يتجاوز ${MAX_FILE_SIZE_MB} ميجابايت`)
+        setFile(null)
+        return
+      }
+    }
+    setFile(selected)
+  }
+
+  const onSubmit = async (values: RequestFormValues) => {
+    try {
+      let imagePath: string | null = null
+      if (values.request_type === 'prescription' && file) {
+        imagePath = await uploadPrescription(file)
+      }
+      await submitRequest({
+        full_name: values.full_name,
+        phone: normalizePhone(values.phone),
+        request_type: values.request_type,
+        age: values.age ? Number(values.age) : null,
+        city: values.city || null,
+        device: values.device || null,
+        chronic_diseases: values.chronic_diseases || null,
+        symptoms: values.symptoms || null,
+        details: values.details || null,
+        image_url: imagePath,
+      })
+      toast.success('تم إرسال طلبك بنجاح!')
+      reset(EMPTY_VALUES)
+      setFile(null)
+      setSubmitted(true)
+    } catch {
+      toast.error('حدث خطأ أثناء الإرسال، حاول مرة أخرى')
+    }
+  }
+
+  const fieldError = (name: keyof RequestFormValues) =>
+    errors[name] ? (
+      <p className="req-error" role="alert">{errors[name]?.message}</p>
+    ) : null
+
+  if (submitted) {
+    return (
+      <div className="req-page" dir="rtl">
+        <div className="req-bg">
+          <div className="req-blob b1" />
+          <div className="req-blob b2" />
+          <div className="req-blob b3" />
+        </div>
+        <div className="req-content">
+          <div className="req-card req-success" role="status">
+            <span className="req-success-icon" aria-hidden="true">✓</span>
+            <h1 className="req-title">تم استلام طلبك</h1>
+            <p className="req-subtitle">فريق AYDA هيراجع الطلب ويتواصل معاك على رقم الموبايل في أقرب وقت</p>
+            <button type="button" className="req-submit" onClick={() => setSubmitted(false)}>
+              إرسال طلب آخر
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="req-page" dir="rtl">
@@ -103,12 +143,14 @@ export default function RequestPage() {
           <p className="req-subtitle">اختر نوع الطلب واملأ البيانات، وفريقنا هيتواصل معاك في أقرب وقت</p>
         </div>
 
-        <div className="req-tabs">
-          {tabs.map((tab) => (
+        <div className="req-tabs" role="tablist">
+          {TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
-              onClick={() => { setActiveTab(tab.id); setShowOther(false) }}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              onClick={() => switchTab(tab.id)}
               className={`req-tab ${activeTab === tab.id ? 'active' : ''}`}
             >
               {tab.label}
@@ -117,69 +159,98 @@ export default function RequestPage() {
         </div>
 
         <div className="req-card">
-          <form onSubmit={handleSubmit} className="req-form">
-            <input
-              required
-              type="text"
-              placeholder="الاسم الكريم"
-              className="req-input"
-              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              value={formData.full_name}
-            />
-            <input
-              required
-              type="tel"
-              placeholder="رقم التليفون للتواصل"
-              className="req-input"
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              value={formData.phone}
-            />
+          <form onSubmit={handleSubmit(onSubmit)} className="req-form" noValidate>
+            <label className="req-label" htmlFor="full_name">الاسم الكريم</label>
+            <input id="full_name" type="text" placeholder="الاسم الكريم" className="req-input" {...register('full_name')} />
+            {fieldError('full_name')}
+
+            <label className="req-label" htmlFor="phone">رقم التليفون للتواصل</label>
+            <input id="phone" type="tel" inputMode="tel" placeholder="01012345678" className="req-input" {...register('phone')} />
+            {fieldError('phone')}
 
             {activeTab === 'prescription' && (
               <>
-                <input type="number" placeholder="السن" className="req-input" onChange={(e) => setFormData({ ...formData, age: e.target.value })} />
-                <textarea placeholder="سبب عدم القدرة على الصرف" className="req-textarea" onChange={(e) => setFormData({ ...formData, details: e.target.value })} />
-                <label className="req-label">ارفع صورة الروشتة:</label>
-                <input type="file" accept="image/*" className="req-file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                <label className="req-label" htmlFor="age">السن (اختياري)</label>
+                <input id="age" type="number" inputMode="numeric" placeholder="السن" className="req-input" {...register('age')} />
+                {fieldError('age')}
+
+                <label className="req-label" htmlFor="details">سبب عدم القدرة على الصرف</label>
+                <textarea id="details" placeholder="سبب عدم القدرة على الصرف" className="req-textarea" {...register('details')} />
+                {fieldError('details')}
+
+                <label className="req-label" htmlFor="prescription-file">ارفع صورة الروشتة (اختياري):</label>
+                <input
+                  id="prescription-file"
+                  type="file"
+                  accept="image/*"
+                  className="req-file"
+                  onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+                />
+                {file && <p className="req-file-name">تم اختيار: {file.name}</p>}
+                {fileError && <p className="req-error" role="alert">{fileError}</p>}
               </>
             )}
 
             {activeTab === 'convoy' && (
               <>
-                <input type="text" placeholder="اسم البلد" className="req-input" onChange={(e) => setFormData({ ...formData, city: e.target.value })} />
-                <textarea placeholder="أسباب نزول القافلة" className="req-textarea" onChange={(e) => setFormData({ ...formData, details: e.target.value })} />
+                <label className="req-label" htmlFor="city">اسم البلد</label>
+                <input id="city" type="text" placeholder="اسم البلد" className="req-input" {...register('city')} />
+                {fieldError('city')}
+
+                <label className="req-label" htmlFor="details">أسباب نزول القافلة</label>
+                <textarea id="details" placeholder="أسباب نزول القافلة" className="req-textarea" {...register('details')} />
+                {fieldError('details')}
               </>
             )}
 
             {activeTab === 'medical' && (
               <>
+                <label className="req-label" htmlFor="device">الجهاز المطلوب</label>
                 <select
+                  id="device"
                   className="req-input"
-                  onChange={(e) => { setShowOther(e.target.value === 'other'); setFormData({ ...formData, device: e.target.value }) }}
+                  value={showOther ? 'other' : watch('device')}
+                  onChange={(e) => {
+                    const isOther = e.target.value === 'other'
+                    setShowOther(isOther)
+                    setValue('device', isOther ? '' : e.target.value, { shouldValidate: false })
+                  }}
                 >
                   <option value="">اختر الجهاز المطلوب...</option>
-                  <option value="كرسي متحرك">كرسي متحرك</option>
-                  <option value="جهاز قياس ضغط">جهاز قياس ضغط</option>
-                  <option value="جهاز قياس سكر">جهاز قياس سكر</option>
+                  {DEVICE_OPTIONS.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
                   <option value="other">أخرى</option>
                 </select>
                 {showOther && (
-                  <input type="text" placeholder="اكتب اسم الجهاز..." className="req-input" onChange={(e) => setFormData({ ...formData, device: e.target.value })} />
+                  <input type="text" placeholder="اكتب اسم الجهاز..." className="req-input" {...register('device')} />
                 )}
-                <textarea placeholder="أسباب عدم القدرة على الشراء" className="req-textarea" onChange={(e) => setFormData({ ...formData, details: e.target.value })} />
+                {fieldError('device')}
+
+                <label className="req-label" htmlFor="details">أسباب عدم القدرة على الشراء</label>
+                <textarea id="details" placeholder="أسباب عدم القدرة على الشراء" className="req-textarea" {...register('details')} />
+                {fieldError('details')}
               </>
             )}
 
             {activeTab === 'consultation' && (
               <>
-                <input type="number" placeholder="السن" className="req-input" onChange={(e) => setFormData({ ...formData, age: e.target.value })} />
-                <input type="text" placeholder="الأمراض المزمنة (إن وجدت)" className="req-input" onChange={(e) => setFormData({ ...formData, chronic_diseases: e.target.value })} />
-                <textarea placeholder="الأعراض التي تشكو منها بالتفصيل" className="req-textarea" onChange={(e) => setFormData({ ...formData, symptoms: e.target.value })} />
+                <label className="req-label" htmlFor="age">السن</label>
+                <input id="age" type="number" inputMode="numeric" placeholder="السن" className="req-input" {...register('age')} />
+                {fieldError('age')}
+
+                <label className="req-label" htmlFor="chronic_diseases">الأمراض المزمنة (إن وجدت)</label>
+                <input id="chronic_diseases" type="text" placeholder="الأمراض المزمنة (إن وجدت)" className="req-input" {...register('chronic_diseases')} />
+                {fieldError('chronic_diseases')}
+
+                <label className="req-label" htmlFor="symptoms">الأعراض التي تشكو منها بالتفصيل</label>
+                <textarea id="symptoms" placeholder="الأعراض التي تشكو منها بالتفصيل" className="req-textarea" {...register('symptoms')} />
+                {fieldError('symptoms')}
               </>
             )}
 
-            <button disabled={loading} type="submit" className="req-submit">
-              {loading ? "جاري الإرسال..." : "إرسال الطلب"}
+            <button disabled={isSubmitting} type="submit" className="req-submit">
+              {isSubmitting ? 'جاري الإرسال...' : 'إرسال الطلب'}
             </button>
           </form>
         </div>

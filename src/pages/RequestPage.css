@@ -228,3 +228,39 @@
     animation: none !important;
   }
 }
+/* Validation + submission feedback */
+.req-error {
+  margin: -0.35rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #dc2626;
+}
+
+.req-file-name {
+  margin: -0.35rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0369a1;
+}
+
+.req-success {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  padding: 3rem 2rem;
+}
+
+.req-success-icon {
+  width: 4rem;
+  height: 4rem;
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 900;
+  box-shadow: 0 15px 30px -10px rgba(5, 150, 105, 0.5);
+}
