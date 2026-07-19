@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { Mail, Lock, Search, ClipboardList, Clock, CheckCircle2, XCircle, LogOut, Download } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { useSession } from '../hooks/useSession'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { checkIsAdmin, signInAdmin, signOutAdmin } from '../services/auth'
@@ -67,50 +69,79 @@ function LoginScreen() {
   }
 
   return (
-    <div className="flex min-h-[80vh] items-center justify-center px-4">
-      <form onSubmit={handleLogin} className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-card">
-        <h1 className="mb-6 text-center text-2xl font-black text-ink">دخول لوحة التحكم</h1>
+    <div className="relative flex min-h-[80vh] items-center justify-center overflow-hidden px-4">
+      <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-teal/10 blur-3xl" aria-hidden="true" />
+      <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-coral/10 blur-3xl" aria-hidden="true" />
 
-        <label className="mb-1.5 block text-sm font-bold text-ink/80" htmlFor="admin-email">
-          البريد الإلكتروني
-        </label>
-        <input
-          id="admin-email"
-          required
-          type="email"
-          className="mb-4 w-full rounded-xl border border-line bg-white px-4 py-3 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+      <form onSubmit={handleLogin} className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-card">
+        <div className="h-1.5 bg-brand-fade" aria-hidden="true" />
+        <div className="p-8">
+          <h1 className="mb-6 text-center font-display text-2xl font-bold text-ink">دخول لوحة التحكم</h1>
 
-        <label className="mb-1.5 block text-sm font-bold text-ink/80" htmlFor="admin-password">
-          كلمة المرور
-        </label>
-        <input
-          id="admin-password"
-          required
-          type="password"
-          className="mb-6 w-full rounded-xl border border-line bg-white px-4 py-3 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+          <label className="mb-1.5 block text-sm font-bold text-ink/80" htmlFor="admin-email">
+            البريد الإلكتروني
+          </label>
+          <div className="relative mb-4">
+            <input
+              id="admin-email"
+              required
+              type="email"
+              className="w-full rounded-xl border border-line bg-white py-3 pl-4 pr-11 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <Mail className="pointer-events-none absolute right-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-ink/30" />
+          </div>
 
-        <button
-          disabled={loggingIn}
-          className="w-full rounded-xl bg-teal py-3.5 font-black text-white shadow-card transition hover:bg-teal-dark disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {loggingIn ? 'جاري الدخول...' : 'دخول'}
-        </button>
+          <label className="mb-1.5 block text-sm font-bold text-ink/80" htmlFor="admin-password">
+            كلمة المرور
+          </label>
+          <div className="relative mb-6">
+            <input
+              id="admin-password"
+              required
+              type="password"
+              className="w-full rounded-xl border border-line bg-white py-3 pl-4 pr-11 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <Lock className="pointer-events-none absolute right-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-ink/30" />
+          </div>
+
+          <button
+            disabled={loggingIn}
+            className="w-full rounded-xl bg-brand-fade py-3.5 font-bold text-white shadow-glow transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loggingIn ? 'جاري الدخول...' : 'دخول'}
+          </button>
+        </div>
       </form>
     </div>
   )
 }
 
-function StatCard({ label, value, accent }: { label: string; value: number; accent: string }) {
+function StatCard({
+  label,
+  value,
+  accent,
+  badge,
+  icon: Icon,
+}: {
+  label: string
+  value: number
+  accent: string
+  badge: string
+  icon: LucideIcon
+}) {
   return (
-    <div className="rounded-2xl bg-white p-5 shadow-card">
-      <p className="text-sm font-bold text-ink/50">{label}</p>
-      <p className={`mt-1 text-3xl font-black ${accent}`}>{value}</p>
+    <div className="flex items-center gap-4 rounded-2xl bg-white p-5 shadow-card">
+      <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${badge}`}>
+        <Icon className="h-5 w-5" strokeWidth={2.25} />
+      </span>
+      <div>
+        <p className="text-sm font-bold text-ink/50">{label}</p>
+        <p className={`font-display text-2xl font-bold ${accent}`}>{value}</p>
+      </div>
     </div>
   )
 }
@@ -252,18 +283,20 @@ export default function AdminDashboard() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-black sm:text-3xl">لوحة تحكم الطلبات</h1>
+        <h1 className="font-display text-2xl font-bold sm:text-3xl">لوحة تحكم الطلبات</h1>
         <div className="flex gap-3">
           <button
             onClick={exportToCSV}
-            className="rounded-xl bg-teal px-5 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-teal-dark"
+            className="flex items-center gap-2 rounded-xl bg-teal px-5 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-teal-dark"
           >
+            <Download className="h-4 w-4" />
             تصدير CSV
           </button>
           <button
             onClick={() => signOutAdmin()}
-            className="rounded-xl border border-line px-5 py-2.5 text-sm font-bold text-ink/60 transition hover:border-red-300 hover:text-red-600"
+            className="flex items-center gap-2 rounded-xl border border-line px-5 py-2.5 text-sm font-bold text-ink/60 transition hover:border-red-300 hover:text-red-600"
           >
+            <LogOut className="h-4 w-4" />
             خروج
           </button>
         </div>
@@ -283,10 +316,34 @@ export default function AdminDashboard() {
 
       {/* Summary */}
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="إجمالي الطلبات" value={counts?.total ?? 0} accent="text-ink" />
-        <StatCard label="قيد الانتظار" value={counts?.pending ?? 0} accent="text-amber" />
-        <StatCard label="مقبول" value={counts?.approved ?? 0} accent="text-teal-dark" />
-        <StatCard label="مرفوض" value={counts?.rejected ?? 0} accent="text-red-600" />
+        <StatCard
+          label="إجمالي الطلبات"
+          value={counts?.total ?? 0}
+          accent="text-ink"
+          badge="bg-sand-deep text-ink/60"
+          icon={ClipboardList}
+        />
+        <StatCard
+          label="قيد الانتظار"
+          value={counts?.pending ?? 0}
+          accent="text-amber"
+          badge="bg-amber-soft text-amber"
+          icon={Clock}
+        />
+        <StatCard
+          label="مقبول"
+          value={counts?.approved ?? 0}
+          accent="text-teal-dark"
+          badge="bg-teal-soft text-teal-dark"
+          icon={CheckCircle2}
+        />
+        <StatCard
+          label="مرفوض"
+          value={counts?.rejected ?? 0}
+          accent="text-red-600"
+          badge="bg-red-50 text-red-600"
+          icon={XCircle}
+        />
       </div>
 
       {/* Filters */}
@@ -294,14 +351,17 @@ export default function AdminDashboard() {
         <label className="sr-only" htmlFor="search">
           البحث بالاسم أو الهاتف
         </label>
-        <input
-          id="search"
-          type="search"
-          placeholder="ابحث بالاسم أو رقم الهاتف..."
-          className="flex-1 rounded-xl border border-line bg-white px-4 py-2.5 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
-          value={searchInput}
-          onChange={(e) => updateSearch(e.target.value)}
-        />
+        <div className="relative flex-1">
+          <input
+            id="search"
+            type="search"
+            placeholder="ابحث بالاسم أو رقم الهاتف..."
+            className="w-full rounded-xl border border-line bg-white py-2.5 pl-4 pr-11 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20"
+            value={searchInput}
+            onChange={(e) => updateSearch(e.target.value)}
+          />
+          <Search className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/30" />
+        </div>
 
         <label className="sr-only" htmlFor="type-filter">
           نوع الطلب
@@ -410,7 +470,7 @@ export default function AdminDashboard() {
               <div key={req.id} className="rounded-2xl bg-white p-4 shadow-card">
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <div>
-                    <p className="font-black">{req.full_name}</p>
+                    <p className="font-bold">{req.full_name}</p>
                     <p className="text-sm text-ink/50" dir="ltr">{req.phone}</p>
                   </div>
                   <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${STATUS_LABELS[req.status]?.badge}`}>
@@ -434,14 +494,14 @@ export default function AdminDashboard() {
                   <button
                     onClick={() => statusMutation.mutate({ id: req.id, status: 'approved' })}
                     disabled={statusMutation.isPending || req.status === 'approved'}
-                    className="flex-1 rounded-lg bg-teal-soft py-2 text-sm font-bold text-teal-dark disabled:opacity-30"
+                    className="flex-1 rounded-xl bg-teal-soft py-2 text-sm font-bold text-teal-dark disabled:opacity-30"
                   >
                     قبول
                   </button>
                   <button
                     onClick={() => handleReject(req.id)}
                     disabled={statusMutation.isPending || req.status === 'rejected'}
-                    className="flex-1 rounded-lg bg-red-50 py-2 text-sm font-bold text-red-700 disabled:opacity-30"
+                    className="flex-1 rounded-xl bg-red-50 py-2 text-sm font-bold text-red-700 disabled:opacity-30"
                   >
                     رفض
                   </button>
@@ -464,14 +524,14 @@ export default function AdminDashboard() {
                 <button
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                   disabled={page === 0}
-                  className="rounded-lg border border-line px-4 py-2 font-bold text-ink/60 disabled:opacity-30"
+                  className="rounded-xl border border-line px-4 py-2 font-bold text-ink/60 transition hover:border-teal hover:text-teal disabled:opacity-30 disabled:hover:border-line disabled:hover:text-ink/60"
                 >
                   السابق
                 </button>
                 <button
                   onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
                   disabled={page >= pageCount - 1}
-                  className="rounded-lg border border-line px-4 py-2 font-bold text-ink/60 disabled:opacity-30"
+                  className="rounded-xl border border-line px-4 py-2 font-bold text-ink/60 transition hover:border-teal hover:text-teal disabled:opacity-30 disabled:hover:border-line disabled:hover:text-ink/60"
                 >
                   التالي
                 </button>
