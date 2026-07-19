@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { Lock } from 'lucide-react'
-import { LOGO_URL } from '../lib/assets'
+import { LOGO_URL, getOptimizedImageUrl } from '../lib/assets'
+
+const NAV_LOGO_URL = getOptimizedImageUrl(LOGO_URL, { width: 68, height: 68, quality: 85 })
 
 const linkClass =
   'whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-bold text-ink/60 transition hover:text-ink'
@@ -27,7 +29,7 @@ export default function Navbar() {
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-3 sm:px-6" aria-label="التنقل الرئيسي">
         <Link to="/" className="flex shrink-0 items-center gap-2 sm:gap-2.5">
           <span className="rounded-xl bg-brand-fade p-[2px] shadow-card">
-            <img src={LOGO_URL} alt="" width="34" height="34" className="h-[30px] w-[30px] rounded-[0.85rem] bg-sand object-cover sm:h-[34px] sm:w-[34px] sm:rounded-[0.9rem]" />
+            <img src={NAV_LOGO_URL} alt="" width="34" height="34" className="h-[30px] w-[30px] rounded-[0.85rem] bg-sand object-cover sm:h-[34px] sm:w-[34px] sm:rounded-[0.9rem]" />
           </span>
           <span className="font-display text-xl font-bold tracking-tight text-ink">AYDA</span>
         </Link>

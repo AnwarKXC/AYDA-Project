@@ -203,7 +203,7 @@ export default function RequestPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-6 sm:p-8" noValidate>
           <div>
             <label className={labelClass} htmlFor="full_name">
-              الاسم الكريم
+              الاسم بالكامل
             </label>
             <div className="relative">
               <input id="full_name" type="text" className={iconInputClass} {...register('full_name')} />

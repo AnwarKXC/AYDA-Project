@@ -65,14 +65,24 @@ export default {
           '0%, 100%': { transform: 'translateY(0) translateX(0)' },
           '50%': { transform: 'translateY(-16px) translateX(8px)' },
         },
-        draw: {
-          to: { strokeDashoffset: '0' },
+        // A "lub-DUB...pause" rhythm on opacity/brightness - two quick
+        // bright beats then a long dim rest, looping. This reads
+        // unambiguously as a heartbeat regardless of where on the path it's
+        // applied, unlike a traveling dash (which was nearly invisible while
+        // crossing this path's long flat stretches - the previous attempt).
+        heartbeat: {
+          '0%, 100%': { opacity: '0.35', filter: 'brightness(1) drop-shadow(0 0 0 transparent)' },
+          '8%': { opacity: '1', filter: 'brightness(1.6) drop-shadow(0 0 6px currentColor)' },
+          '16%': { opacity: '0.45', filter: 'brightness(1)' },
+          '24%': { opacity: '1', filter: 'brightness(1.6) drop-shadow(0 0 6px currentColor)' },
+          '34%': { opacity: '0.35', filter: 'brightness(1) drop-shadow(0 0 0 transparent)' },
         },
       },
       animation: {
         'fade-up': 'fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both',
         float: 'float 9s ease-in-out infinite',
         'float-slow': 'float 13s ease-in-out infinite',
+        heartbeat: 'heartbeat 2.2s ease-in-out infinite',
       },
     },
   },
