@@ -2,6 +2,11 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchCommittees } from '../services/committees'
 import { HERO_IMAGE_URL } from '../lib/assets'
+import { useParallax } from '../hooks/useParallax'
+import { useScrollReveal } from '../hooks/useScrollReveal'
+import { Reveal } from '../components/Reveal'
+import { PulseLine } from '../components/PulseLine'
+import type { Committee } from '../types'
 
 function CommitteeSkeleton() {
   return (
@@ -15,6 +20,48 @@ function CommitteeSkeleton() {
   )
 }
 
+function CommitteeCard({ committee, index }: { committee: Committee; index: number }) {
+  const { ref, visible } = useScrollReveal<HTMLElement>()
+
+  return (
+    <article
+      ref={ref}
+      className={`group overflow-hidden rounded-2xl bg-white shadow-card transition-all duration-700 hover:-translate-y-1.5 hover:shadow-glow ${
+        visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+      }`}
+      style={{ transitionDelay: visible ? `${Math.min(index, 6) * 90}ms` : '0ms' }}
+    >
+      <div className="relative h-44 overflow-hidden bg-teal-soft">
+        {committee.image_url ? (
+          <>
+            <img
+              src={committee.image_url}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            />
+            {/* Duotone wash so photos of varying quality/color read as one system */}
+            <div className="absolute inset-0 bg-teal mix-blend-color opacity-30" />
+            <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
+          </>
+        ) : (
+          <div className="flex h-full items-center justify-center font-display text-4xl font-bold text-teal/30">
+            {committee.code}
+          </div>
+        )}
+        <span className="absolute bottom-3 right-3 rounded-xl bg-ink/80 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
+          {committee.code}
+        </span>
+      </div>
+      <div className="p-5">
+        <h3 className="font-display text-lg font-bold">{committee.name}</h3>
+        {committee.description && <p className="mt-1 text-sm leading-relaxed text-ink/60">{committee.description}</p>}
+      </div>
+    </article>
+  )
+}
+
 export default function CommitteesPage() {
   const {
     data: committees = [],
@@ -22,66 +69,104 @@ export default function CommitteesPage() {
     isError,
   } = useQuery({ queryKey: ['committees'], queryFn: fetchCommittees })
 
+  const { ref: auroraRef, offset: auroraOffset } = useParallax<HTMLDivElement>(-0.12)
+  const { ref: photoRef, offset: photoOffset } = useParallax<HTMLDivElement>(0.05)
+
   return (
     <div>
       {/* Hero */}
       <section className="relative overflow-hidden bg-ink">
-        <img
-          src={HERO_IMAGE_URL}
-          alt="فريق AYDA"
-          className="absolute inset-0 h-full w-full object-cover opacity-40"
+        <div
+          ref={auroraRef}
+          className="absolute inset-0 bg-aurora"
+          style={{ transform: `translateY(${auroraOffset}px)` }}
+          aria-hidden="true"
         />
-        <div className="absolute inset-0 bg-gradient-to-l from-ink via-ink/80 to-ink/40" />
+        <div className="absolute -left-24 top-10 h-72 w-72 rounded-full bg-coral/20 blur-3xl animate-float-slow" aria-hidden="true" />
+        <div className="absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-teal/30 blur-3xl animate-float" aria-hidden="true" />
 
-        <div className="relative mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-32">
-          <div className="max-w-2xl animate-fade-up">
-            <span className="mb-4 inline-block rounded-full bg-amber-soft px-4 py-1 text-sm font-bold text-amber">
+        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 sm:py-28 lg:grid-cols-2 lg:py-32">
+          {/* Content */}
+          <div className="animate-fade-up">
+            <span className="mb-5 inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-1.5 text-sm font-bold text-amber ring-1 ring-white/15">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber" />
               Association of Young Doctors
             </span>
-            <h1 className="text-4xl font-black leading-tight text-white sm:text-6xl">
-              الصحة{' '}
-              <span className="relative inline-block">
-                حق للجميع
-                <svg
-                  className="absolute -bottom-2 right-0 w-full"
-                  viewBox="0 0 200 12"
-                  fill="none"
-                  aria-hidden="true"
-                  preserveAspectRatio="none"
-                >
-                  <path d="M4 8 C60 2, 140 2, 196 7" stroke="#E9A13B" strokeWidth="5" strokeLinecap="round" />
-                </svg>
-              </span>
+            <h1 className="font-display text-4xl font-bold leading-[1.15] text-white sm:text-5xl lg:text-6xl">
+              الصحة <span className="text-gradient">حق للجميع</span>
             </h1>
-            <p className="mt-6 text-lg leading-relaxed text-white/80">
-              فريق من أطباء المستقبل يعمل على توصيل الدواء والأجهزة الطبية والاستشارات لمن يحتاجها،
-              مجاناً وبكرامة كاملة.
+            <p className="mt-6 max-w-lg text-lg leading-relaxed text-white/70">
+              فريق من أطباء المستقبل يعمل على توصيل الدواء والأجهزة الطبية والاستشارات لمن
+              يحتاجها، مجاناً وبكرامة كاملة.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-9 flex flex-wrap gap-3">
               <Link
                 to="/request"
-                className="rounded-xl bg-amber px-7 py-3.5 font-black text-ink shadow-lift transition hover:brightness-110"
+                className="rounded-xl bg-brand-fade px-7 py-3.5 font-display font-bold text-white shadow-glow transition hover:brightness-110"
               >
                 اطلب مساعدة طبية
               </Link>
               <a
                 href="#committees"
-                className="rounded-xl border border-white/30 px-7 py-3.5 font-bold text-white transition hover:bg-white/10"
+                className="rounded-xl border border-white/20 px-7 py-3.5 font-bold text-white transition hover:bg-white/10"
               >
                 تعرّف على اللجان
               </a>
+            </div>
+
+            {/* Signature pulse divider with real/qualitative stats threaded along it */}
+            <div className="relative mt-12 max-w-md">
+              <PulseLine className="h-8 w-full text-coral/70" strokeWidth={2.5} />
+              <div className="mt-3 flex flex-wrap gap-x-8 gap-y-2 text-sm">
+                <div>
+                  <span className="font-display text-xl font-bold text-white">
+                    {committees.length || '—'}
+                  </span>
+                  <span className="mr-1.5 text-white/50">لجان نشطة</span>
+                </div>
+                <div>
+                  <span className="font-display text-xl font-bold text-white">مجاناً</span>
+                  <span className="mr-1.5 text-white/50">لكل الحالات</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Photo */}
+          <div ref={photoRef} className="relative" style={{ transform: `translateY(${photoOffset}px)` }}>
+            <div className="relative rounded-tr-[3.5rem] rounded-bl-[3.5rem] rounded-tl-2xl rounded-br-2xl shadow-lift ring-1 ring-white/10">
+              <img
+                src={HERO_IMAGE_URL}
+                alt="فريق AYDA"
+                className="h-full max-h-[26rem] w-full rounded-tr-[3.5rem] rounded-bl-[3.5rem] rounded-tl-2xl rounded-br-2xl object-cover"
+              />
+              <div className="absolute inset-0 rounded-tr-[3.5rem] rounded-bl-[3.5rem] rounded-tl-2xl rounded-br-2xl bg-gradient-to-t from-ink/50 via-transparent to-transparent" />
+            </div>
+
+            {/* Floating availability badge - ties to the pulse/ECG motif instead of a generic stat card */}
+            <div className="absolute -bottom-6 -right-4 flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-lift sm:-right-6">
+              <span className="relative flex h-3 w-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal opacity-60" />
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-teal" />
+              </span>
+              <span className="text-sm font-bold text-ink">فريقنا متاح الآن</span>
             </div>
           </div>
         </div>
       </section>
 
+      {/* A crisp brand-gradient seam marks the transition deliberately instead
+          of an alpha-blended fade, which muddies badly between hues this far
+          apart (dark teal ink -> warm cream sand). */}
+      <div className="h-[3px] bg-brand-fade" aria-hidden="true" />
+
       {/* Committees */}
-      <section id="committees" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <div className="mb-10 text-center">
-          <span className="text-sm font-bold text-amber">فرق العمل</span>
-          <h2 className="mt-1 text-3xl font-black">لجان AYDA</h2>
+      <section id="committees" className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+        <Reveal className="mb-10 text-center">
+          <span className="text-sm font-bold text-coral">فرق العمل</span>
+          <h2 className="mt-1 font-display text-3xl font-bold">لجان AYDA</h2>
           <p className="mt-2 text-ink/60">تعرّف على اللجان التي تشكّل عمل الفريق ومجالات تخصصه</p>
-        </div>
+        </Reveal>
 
         {isError && (
           <p className="rounded-xl bg-red-50 p-4 text-center font-bold text-red-700" role="alert">
@@ -96,35 +181,7 @@ export default function CommitteesPage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {isLoading
             ? Array.from({ length: 6 }).map((_, i) => <CommitteeSkeleton key={i} />)
-            : committees.map((c) => (
-                <article
-                  key={c.id}
-                  className="group overflow-hidden rounded-2xl bg-white shadow-card transition hover:-translate-y-1 hover:shadow-lift"
-                >
-                  <div className="relative h-44 bg-teal-soft">
-                    {c.image_url ? (
-                      <img
-                        src={c.image_url}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-4xl font-black text-teal/30">
-                        {c.code}
-                      </div>
-                    )}
-                    <span className="absolute bottom-3 right-3 rounded-full bg-ink/80 px-3 py-1 text-xs font-bold text-white">
-                      {c.code}
-                    </span>
-                  </div>
-                  <div className="p-5">
-                    <h3 className="text-lg font-black">{c.name}</h3>
-                    {c.description && <p className="mt-1 text-sm leading-relaxed text-ink/60">{c.description}</p>}
-                  </div>
-                </article>
-              ))}
+            : committees.map((c, i) => <CommitteeCard key={c.id} committee={c} index={i} />)}
         </div>
       </section>
     </div>
